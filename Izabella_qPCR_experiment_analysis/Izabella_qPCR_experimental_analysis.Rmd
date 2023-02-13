@@ -1,0 +1,122 @@
+---
+title: "Izabella - qPCR experimental analysis"
+author: "Jessica Hill and Izabella Mastroianni"
+date: "3/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+load packges
+```{r}
+library("ggplot2")
+library("dplyr")
+```
+
+
+Read in data
+```{r}
+data <- read.csv("izabella_qPCR_data_formated.csv", header = TRUE)
+```
+
+
+```{r}
+data_frame <- as.data.frame(data)
+data_frame
+```
+
+```{r}
+data_frame$rep <- factor(data_frame$rep, levels = c("1", "2", "3"))
+data_frame$diet <- factor(data_frame$diet, levels = c("op50", "cembio"))
+data_frame$gene <- factor(data_frame$gene, levels = c("elt-2", "elt-7", "clec-41"))
+data_frame$exposure <- factor(data_frame$exposure, levels = c("no", "yes"))
+data_frame$grouping <- factor(data_frame$grouping, levels = c("OP50", "OP50_PA14", "CeMbio", "CeMbio_PA14"))
+
+str(data_frame)
+```
+
+subset data by gene target 
+```{r}
+elt2_data <- subset.data.frame(data_frame, gene=='elt-2')
+elt2_data
+  
+elt7_data <- subset.data.frame(data_frame, gene=='elt-7')
+elt7_data
+
+clec41_data <- subset.data.frame(data_frame, gene=='clec-41')
+clec41_data
+```
+
+
+
+Graph data using boxplot
+```{r}
+ggplot(data_frame, aes(grouping, fld_expression)) + 
+  geom_boxplot() +
+  geom_jitter(aes(fill = rep, color = rep)) +
+  facet_grid(.~gene) +
+  ylim(0, 2) +
+  labs(
+    title = "Changes In Intestine Gene Expression Upon PA14 Exposure",
+    x = "Group",
+    y = "Fold Gene Expression"
+  ) +
+  theme_classic() +
+  theme(
+    panel.border = element_rect(colour = "black", fill = NA, size = 1),
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 15),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size=15),
+    plot.title = element_text(hjust = 0.5, size = 18)
+  )
+```
+
+
+```{r}
+ggsave("Fold Gene Expression Plot.pdf", width = 9, height = 3.5) 
+```
+
+
+Now to run the 2 way ANOVA
+```{r}
+data_aov2 <- aov(fld_expression ~ gene + diet + exposure + gene*diet + gene*exposure, data = data_frame)
+summary(data_aov2)
+
+#post_hoc_test <- TukeyHSD(data_aov2)
+#post_hoc_test
+
+
+
+elt2_data_aov2 <- aov(fld_expression ~ diet + exposure + diet*exposure, data = elt2_data)
+summary(elt2_data_aov2)
+
+elt7_data_aov2 <- aov(fld_expression ~ diet + exposure + diet*exposure, data = elt7_data)
+summary(elt7_data_aov2)
+
+clec41_data_aov2 <- aov(fld_expression ~ diet + exposure + diet*exposure, data = clec41_data)
+summary(clec41_data_aov2)
+```
+
+
+
+lets try to run a 1 way ANOVA
+```{r}
+data_aov1 <- aov(fld_expression ~ grouping, data = data_frame)
+summary(data_aov1)
+
+#post_hoc_test <- TukeyHSD(data_aov1)
+#post_hoc_test
+
+elt2_data_aov1 <- aov(fld_expression ~ grouping, data = elt2_data)
+summary(elt2_data_aov1)
+
+elt7_data_aov1 <- aov(fld_expression ~ grouping, data = elt7_data)
+summary(elt7_data_aov1)
+
+clec41_data_aov1 <- aov(fld_expression ~ grouping, data = clec41_data)
+summary(clec41_data_aov1)
+```
+
